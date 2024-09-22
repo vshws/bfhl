@@ -12,7 +12,7 @@ function App() {
 
     try {
       const parsedData = data.split(',').map(item => item.trim()); // Split input into array
-      const res = await axios.post('https://bfhlser.up.railway.app/bfhl', { data: parsedData });
+      const res = await axios.post('', { data: parsedData });
       setResponse(res.data); // Set backend response
       setError(null); // Clear any previous error
     } catch (err) {
