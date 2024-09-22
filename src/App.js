@@ -2,59 +2,96 @@ import React, { useState } from 'react';
 import axios from 'axios';
 
 function App() {
-  const [data, setData] = useState('');        // State to store input data
-  const [response, setResponse] = useState(null); // State to store backend response
-  const [error, setError] = useState(null);    // State to store error messages
+  const [input, setInput] = useState('');
+  const [response, setResponse] = useState(null);
+  const [error, setError] = useState(null);
+  const [selectedOptions, setSelectedOptions] = useState([]);
 
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     try {
-      const parsedData = data.split(',').map(item => item.trim()); // Split input into array
-      const res = await axios.post('', { data: parsedData });
-      setResponse(res.data); // Set backend response
-      setError(null); // Clear any previous error
+      const jsonInput = JSON.parse(input);
+      const res = await axios.post('https://bfhlser.up.railway.app/bfhl', jsonInput);
+      setResponse(res.data);
+      setError(null);
     } catch (err) {
-      setError(err.response ? err.response.data.message : 'Error connecting to server');
-      setResponse(null); // Clear previous success response
+      setError('Invalid JSON input or server error');
+      setResponse(null);
     }
   };
 
+  // Handle option change (multi-select)
+  const handleOptionChange = (e) => {
+    const { value, checked } = e.target;
+    if (checked) {
+      setSelectedOptions([...selectedOptions, value]);
+    } else {
+      setSelectedOptions(selectedOptions.filter(option => option !== value));
+    }
+  };
+
+  // Render response based on selected options
+  const renderResponse = () => {
+    if (!response) return null;
+
+    let output = {};
+    if (selectedOptions.includes('Numbers')) {
+      output.numbers = response.numbers;
+    }
+    if (selectedOptions.includes('Alphabets')) {
+      output.alphabets = response.alphabets;
+    }
+    if (selectedOptions.includes('Highest Lowercase Alphabet')) {
+      output.highest_lowercase_alphabet = response.highest_lowercase_alphabet;
+    }
+
+    return <pre>{JSON.stringify(output, null, 2)}</pre>;
+  };
+
   return (
-    <div className="App">
-      <h1>Backend Interaction with React</h1>
+    <div>
+      <h1>BFHL API Frontend</h1>
       <form onSubmit={handleSubmit}>
-        <label>
-          Enter Data (comma separated values):
-          <input
-            type="text"
-            value={data}
-            onChange={(e) => setData(e.target.value)}
-            placeholder="Example: 1, A, b, 3, C"
-            required
-          />
-        </label>
+        <textarea
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder='Enter JSON data'
+        />
         <button type="submit">Submit</button>
       </form>
 
-      {/* Display the response */}
-      {response && (
-        <div>
-          <h2>Response</h2>
-          <p><strong>Success:</strong> {response.is_success.toString()}</p>
-          <p><strong>Numbers:</strong> {response.numbers.join(', ')}</p>
-          <p><strong>Alphabets:</strong> {response.alphabets.join(', ')}</p>
-          <p><strong>Highest Alphabet:</strong> {response.highest_alphabet}</p>
-        </div>
-      )}
+      {error && <p style={{ color: 'red' }}>{error}</p>}
 
-      {/* Display the error */}
-      {error && (
-        <div>
-          <h2>Error</h2>
-          <p>{error}</p>
-        </div>
+      {response && (
+        <>
+          <h2>Select Data to Display</h2>
+          <label>
+            <input
+              type="checkbox"
+              value="Numbers"
+              onChange={handleOptionChange}
+            />
+            Numbers
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              value="Alphabets"
+              onChange={handleOptionChange}
+            />
+            Alphabets
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              value="Highest Lowercase Alphabet"
+              onChange={handleOptionChange}
+            />
+            Highest Lowercase Alphabet
+          </label>
+          {renderResponse()}
+        </>
       )}
     </div>
   );
